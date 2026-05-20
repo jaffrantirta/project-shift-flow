@@ -55,6 +55,7 @@ class AdminPanelProvider extends PanelProvider
                 NavigationGroup::make('Leave Management'),
                 NavigationGroup::make('Communication'),
                 NavigationGroup::make('Task Management'),
+                NavigationGroup::make('Reports'),
                 NavigationGroup::make('System')
                     ->collapsed(),
             ])
