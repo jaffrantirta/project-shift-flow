@@ -1,0 +1,143 @@
+<?php
+
+namespace App\Livewire;
+
+use App\Models\Location;
+use App\Models\Shift;
+use App\Models\User;
+use Carbon\Carbon;
+use Illuminate\Support\Collection;
+use Livewire\Attributes\Computed;
+use Livewire\Attributes\Url;
+use Livewire\Component;
+
+class ScheduleCalendar extends Component
+{
+    #[Url(as: 'week')]
+    public string $weekStart = '';
+
+    #[Url(as: 'loc')]
+    public ?int $locationId = null;
+
+    public bool $showModal = false;
+    public ?int $selectedUserId = null;
+    public ?string $selectedDate = null;
+    public ?int $editingShiftId = null;
+
+    public function mount(): void
+    {
+        if (empty($this->weekStart)) {
+            $this->weekStart = now()->startOfWeek()->format('Y-m-d');
+        }
+    }
+
+    public function previousWeek(): void
+    {
+        $this->weekStart = Carbon::parse($this->weekStart)->subWeek()->format('Y-m-d');
+        unset($this->shifts);
+    }
+
+    public function nextWeek(): void
+    {
+        $this->weekStart = Carbon::parse($this->weekStart)->addWeek()->format('Y-m-d');
+        unset($this->shifts);
+    }
+
+    public function goToToday(): void
+    {
+        $this->weekStart = now()->startOfWeek()->format('Y-m-d');
+        unset($this->shifts);
+    }
+
+    public function updatedLocationId(): void
+    {
+        unset($this->shifts, $this->employees);
+    }
+
+    public function moveShift(int $shiftId, int $userId, string $date): void
+    {
+        $shift = Shift::find($shiftId);
+        if (! $shift) {
+            return;
+        }
+
+        $duration = $shift->start_datetime->diffInMinutes($shift->end_datetime);
+        $newStart = Carbon::parse($date)
+            ->setHour($shift->start_datetime->hour)
+            ->setMinute($shift->start_datetime->minute);
+
+        $shift->update([
+            'user_id' => $userId,
+            'start_datetime' => $newStart,
+            'end_datetime' => $newStart->copy()->addMinutes($duration),
+        ]);
+
+        unset($this->shifts);
+    }
+
+    public function openAddModal(int $userId, string $date): void
+    {
+        $this->selectedUserId = $userId;
+        $this->selectedDate = $date;
+        $this->editingShiftId = null;
+        $this->showModal = true;
+    }
+
+    public function openEditModal(int $shiftId): void
+    {
+        $this->editingShiftId = $shiftId;
+        $this->selectedUserId = null;
+        $this->selectedDate = null;
+        $this->showModal = true;
+    }
+
+    #[Computed]
+    public function weekStartCarbon(): Carbon
+    {
+        return Carbon::parse($this->weekStart)->startOfWeek();
+    }
+
+    #[Computed]
+    public function weekDays(): array
+    {
+        return collect(range(0, 6))
+            ->map(fn(int $i) => $this->weekStartCarbon->copy()->addDays($i))
+            ->all();
+    }
+
+    #[Computed]
+    public function employees(): Collection
+    {
+        return User::query()
+            ->when($this->locationId, fn($q) => $q->whereHas('locations', fn($q) => $q->where('location_id', $this->locationId)))
+            ->with('employeeProfile')
+            ->where('status', 'active')
+            ->orderBy('name')
+            ->get();
+    }
+
+    #[Computed]
+    public function shifts(): Collection
+    {
+        $start = $this->weekStartCarbon;
+        $end = $start->copy()->endOfWeek();
+
+        return Shift::query()
+            ->whereBetween('start_datetime', [$start, $end])
+            ->when($this->locationId, fn($q) => $q->where('location_id', $this->locationId))
+            ->with(['user', 'department', 'location'])
+            ->get()
+            ->groupBy(fn(Shift $s) => $s->user_id . '_' . $s->start_datetime->format('Y-m-d'));
+    }
+
+    #[Computed]
+    public function locations(): Collection
+    {
+        return Location::orderBy('name')->get();
+    }
+
+    public function render(): \Illuminate\View\View
+    {
+        return view('livewire.schedule-calendar');
+    }
+}

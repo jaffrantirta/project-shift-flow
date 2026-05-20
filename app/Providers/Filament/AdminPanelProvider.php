@@ -11,8 +11,7 @@ use Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Colors\Color;
-use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
+use Filament\View\PanelsRenderHook;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\PreventRequestForgery;
@@ -40,26 +39,23 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
-                AccountWidget::class,
-                FilamentInfoWidget::class,
+                \App\Filament\Widgets\StatsOverviewWidget::class,
+                \App\Filament\Widgets\UpcomingShiftsWidget::class,
+                \App\Filament\Widgets\PendingApprovalsWidget::class,
             ])
+            ->renderHook(
+                PanelsRenderHook::HEAD_END,
+                fn (): string => app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js'])
+            )
             ->navigationGroups([
-                NavigationGroup::make('Organization')
-                    ->icon('heroicon-o-building-office-2'),
-                NavigationGroup::make('Scheduling')
-                    ->icon('heroicon-o-calendar-days'),
-                NavigationGroup::make('Time & Attendance')
-                    ->icon('heroicon-o-clock'),
-                NavigationGroup::make('Timesheets')
-                    ->icon('heroicon-o-document-check'),
-                NavigationGroup::make('Leave Management')
-                    ->icon('heroicon-o-calendar-x-mark'),
-                NavigationGroup::make('Communication')
-                    ->icon('heroicon-o-chat-bubble-left-right'),
-                NavigationGroup::make('Task Management')
-                    ->icon('heroicon-o-clipboard-document-list'),
+                NavigationGroup::make('Organization'),
+                NavigationGroup::make('Scheduling'),
+                NavigationGroup::make('Time & Attendance'),
+                NavigationGroup::make('Timesheets'),
+                NavigationGroup::make('Leave Management'),
+                NavigationGroup::make('Communication'),
+                NavigationGroup::make('Task Management'),
                 NavigationGroup::make('System')
-                    ->icon('heroicon-o-cog-6-tooth')
                     ->collapsed(),
             ])
             ->middleware([
