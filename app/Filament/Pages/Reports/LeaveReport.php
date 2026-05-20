@@ -77,7 +77,7 @@ class LeaveReport extends Page implements HasTable
                         ->when($data['from'],  fn($q, $v) => $q->whereDate('start_date', '>=', $v))
                         ->when($data['until'], fn($q, $v) => $q->whereDate('end_date',   '<=', $v))),
                 Tables\Filters\Filter::make('paid_only')->label('Paid Leave Only')
-                    ->query(fn(Builder $q) => $q->whereHas('leaveType', fn($q) => $q->where('is_paid', true)))
+                    ->query(fn(Builder $query) => $query->whereHas('leaveType', fn($q) => $q->where('is_paid', true)))
                     ->toggle(),
             ])
             ->defaultSort('start_date', 'desc')->striped()->paginated([25, 50, 100]);

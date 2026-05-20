@@ -126,7 +126,7 @@ class LaborCostReport extends Page implements HasTable
                         'casual'     => 'Casual',
                         'contractor' => 'Contractor',
                     ])
-                    ->query(fn(Builder $q, array $data) => $q->when(
+                    ->query(fn(Builder $query, array $data) => $query->when(
                         $data['value'],
                         fn($q, $v) => $q->whereHas('user.employeeProfile', fn($q) => $q->where('employment_type', $v))
                     )),

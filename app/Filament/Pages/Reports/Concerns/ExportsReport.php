@@ -51,7 +51,7 @@ trait ExportsReport
         }, $this->getCsvFilename(), ['Content-Type' => 'text/csv']);
     }
 
-    protected function exportPdf(): \Illuminate\Http\Response
+    protected function exportPdf(): \Symfony\Component\HttpFoundation\StreamedResponse
     {
         $data = array_merge($this->getPdfData(), [
             'title'    => $this->getPdfTitle(),
@@ -67,10 +67,14 @@ trait ExportsReport
                 'isRemoteEnabled' => false,
             ]);
 
-        return response($pdf->output(), 200, [
-            'Content-Type'        => 'application/pdf',
-            'Content-Disposition' => 'attachment; filename="' . $this->getPdfFilename() . '"',
-        ]);
+        $output = $pdf->output();
+        $filename = $this->getPdfFilename();
+
+        return response()->streamDownload(
+            fn() => print($output),
+            $filename,
+            ['Content-Type' => 'application/pdf']
+        );
     }
 
     protected function getHeaderActions(): array
