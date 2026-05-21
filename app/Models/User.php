@@ -15,7 +15,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-#[Fillable(['company_id', 'name', 'email', 'password', 'phone', 'avatar', 'pin', 'status'])]
+#[Fillable(['company_id', 'name', 'email', 'password', 'phone', 'avatar', 'pin', 'status', 'is_owner'])]
 #[Hidden(['password', 'remember_token', 'pin'])]
 class User extends Authenticatable implements FilamentUser
 {
@@ -24,6 +24,10 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
+        if ($panel->getId() === 'owner') {
+            return $this->is_owner === true;
+        }
+
         return $this->status === 'active';
     }
 
@@ -32,6 +36,7 @@ class User extends Authenticatable implements FilamentUser
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_owner' => 'boolean',
         ];
     }
 
