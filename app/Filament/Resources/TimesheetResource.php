@@ -15,6 +15,8 @@ use Filament\Tables;
 use Filament\Actions\Action as TableAction;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Auth;
+use Filament\Actions\CreateAction;
+use Filament\Actions\EditAction;
 use Filament\Actions\ViewAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\BulkAction;
@@ -118,6 +120,7 @@ class TimesheetResource extends Resource
             ])
             ->actions([
                 ViewAction::make(),
+                EditAction::make(),
                 TableAction::make('approve')
                     ->label('Approve')
                     ->icon('heroicon-o-check-circle')
@@ -190,8 +193,10 @@ class TimesheetResource extends Resource
     public static function getPages(): array
     {
         return [
-            'index' => Pages\ListTimesheets::route('/'),
-            'view' => Pages\ViewTimesheet::route('/{record}'),
+            'index'  => Pages\ListTimesheets::route('/'),
+            'create' => Pages\CreateTimesheet::route('/create'),
+            'view'   => Pages\ViewTimesheet::route('/{record}'),
+            'edit'   => Pages\EditTimesheet::route('/{record}/edit'),
         ];
     }
 }

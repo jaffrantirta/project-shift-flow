@@ -30,6 +30,14 @@ class ShiftResource extends Resource
     {
         return $schema->schema([
             SchemaComponents\Section::make('Shift Assignment')->schema([
+                Forms\Components\Select::make('schedule_id')
+                    ->label('Schedule')
+                    ->relationship('schedule', 'week_start_date')
+                    ->getOptionLabelFromRecordUsing(fn($record) => 'Week of ' . $record->week_start_date->format('M j, Y') . ' — ' . $record->location->name)
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Ad-hoc (no schedule)')
+                    ->columnSpanFull(),
                 Forms\Components\Select::make('user_id')
                     ->label('Employee')
                     ->relationship('user', 'name')
