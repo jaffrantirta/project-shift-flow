@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Filament\Owner\Pages\Auth;
+namespace App\Filament\Pages\Auth;
 
 use App\Models\Company;
 use App\Models\User;
@@ -10,6 +10,7 @@ use Filament\Schemas\Components\Component;
 use Filament\Schemas\Schema;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rules\Password;
 
 class Register extends BaseRegister
 {
@@ -43,6 +44,20 @@ class Register extends BaseRegister
             ->maxLength(255);
     }
 
+    // Remove dehydrateStateUsing — User model's 'hashed' cast handles it
+    protected function getPasswordFormComponent(): Component
+    {
+        return TextInput::make('password')
+            ->label(__('filament-panels::auth/pages/register.form.password.label'))
+            ->password()
+            ->revealable(filament()->arePasswordsRevealable())
+            ->required()
+            ->rule(Password::default())
+            ->showAllValidationMessages()
+            ->same('passwordConfirmation')
+            ->validationAttribute(__('filament-panels::auth/pages/register.form.password.validation_attribute'));
+    }
+
     public function getHeading(): string|\Illuminate\Contracts\Support\Htmlable|null
     {
         return 'Create your account';
@@ -55,9 +70,13 @@ class Register extends BaseRegister
 
     protected function handleRegistration(array $data): Model
     {
+        // Access Livewire state directly — $data from getState() may not include
+        // custom fields that aren't part of the base Register schema
+        $companyName = $this->data['company_name'] ?? $data['company_name'] ?? null;
+
         $company = Company::create([
-            'name'     => $data['company_name'],
-            'slug'     => Str::slug($data['company_name']) . '-' . Str::random(5),
+            'name'     => $companyName,
+            'slug'     => Str::slug($companyName ?? 'company') . '-' . Str::random(5),
             'timezone' => 'UTC',
         ]);
 
@@ -66,8 +85,7 @@ class Register extends BaseRegister
             'name'       => $data['name'],
             'email'      => $data['email'],
             'password'   => $data['password'],
-            'role'       => 'owner',
-            'is_owner'   => true,
+            'role'       => 'admin',
             'status'     => 'active',
         ]);
     }

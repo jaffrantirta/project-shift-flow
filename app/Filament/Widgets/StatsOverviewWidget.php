@@ -15,10 +15,24 @@ class StatsOverviewWidget extends BaseWidget
 
     protected function getStats(): array
     {
-        $todayShifts = Shift::whereDate('start_datetime', today())->count();
-        $pendingTimesheets = Timesheet::where('status', 'submitted')->count();
-        $pendingLeave = LeaveRequest::where('status', 'pending')->count();
-        $activeEmployees = User::where('status', 'active')->count();
+        $companyId = auth()->user()?->company_id;
+
+        $activeEmployees = User::where('company_id', $companyId)
+            ->where('status', 'active')
+            ->whereIn('role', ['admin', 'employee'])
+            ->count();
+
+        $todayShifts = Shift::whereDate('start_datetime', today())
+            ->whereHas('location', fn($q) => $q->where('company_id', $companyId))
+            ->count();
+
+        $pendingTimesheets = Timesheet::where('status', 'submitted')
+            ->whereHas('user', fn($q) => $q->where('company_id', $companyId))
+            ->count();
+
+        $pendingLeave = LeaveRequest::where('status', 'pending')
+            ->whereHas('user', fn($q) => $q->where('company_id', $companyId))
+            ->count();
 
         return [
             Stat::make('Active Employees', $activeEmployees)

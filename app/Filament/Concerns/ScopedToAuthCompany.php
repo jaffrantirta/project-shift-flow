@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Builder;
  *
  * Define a COMPANY_SCOPE constant on the resource class:
  *   'direct'      — model has company_id column (default)
+ *   'self'        — model IS the company; filter by id = user's company_id
  *   'via_user'    — model has user_id → users.company_id
  *   'via_location'— model has location_id → locations.company_id
  */
@@ -31,6 +32,7 @@ trait ScopedToAuthCompany
         $scope     = defined('static::COMPANY_SCOPE') ? static::COMPANY_SCOPE : 'direct';
 
         return match ($scope) {
+            'self'         => $query->where('id', $companyId),
             'via_user'     => $query->whereHas('user', fn($q) => $q->where('company_id', $companyId)),
             'via_location' => $query->whereHas('location', fn($q) => $q->where('company_id', $companyId)),
             default        => $query->where('company_id', $companyId),

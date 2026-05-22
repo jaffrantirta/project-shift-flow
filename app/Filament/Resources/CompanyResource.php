@@ -18,6 +18,8 @@ class CompanyResource extends Resource
 {
     use ScopedToAuthCompany;
 
+    const COMPANY_SCOPE = 'self';
+
     protected static ?string $model = Company::class;
     protected static string|\UnitEnum|null $navigationGroup = 'System';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-office-2';

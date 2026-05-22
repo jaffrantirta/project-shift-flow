@@ -2,13 +2,11 @@
 
 namespace App\Filament\Widgets;
 
-use App\Models\LeaveRequest;
 use App\Models\Timesheet;
 use Filament\Tables;
 use Filament\Actions\Action as TableAction;
 use Filament\Tables\Table;
 use Filament\Widgets\TableWidget as BaseWidget;
-use Illuminate\Database\Eloquent\Builder;
 
 class PendingApprovalsWidget extends BaseWidget
 {
@@ -18,10 +16,13 @@ class PendingApprovalsWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $companyId = auth()->user()?->company_id;
+
         return $table
             ->query(
                 Timesheet::query()
                     ->where('status', 'submitted')
+                    ->whereHas('user', fn($q) => $q->where('company_id', $companyId))
                     ->with('user', 'location')
                     ->orderBy('submitted_at')
                     ->limit(10)

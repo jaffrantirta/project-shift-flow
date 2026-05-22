@@ -15,10 +15,13 @@ class UpcomingShiftsWidget extends BaseWidget
 
     public function table(Table $table): Table
     {
+        $companyId = auth()->user()?->company_id;
+
         return $table
             ->query(
                 Shift::query()
                     ->whereBetween('start_datetime', [now(), now()->addHours(48)])
+                    ->whereHas('location', fn($q) => $q->where('company_id', $companyId))
                     ->with(['user', 'location', 'department'])
                     ->orderBy('start_datetime')
             )
@@ -47,7 +50,7 @@ class UpcomingShiftsWidget extends BaseWidget
                         'scheduled' => 'indigo',
                         'completed' => 'gray',
                         'cancelled' => 'danger',
-                        default => 'gray',
+                        default     => 'gray',
                     }),
             ])
             ->paginated(false);
