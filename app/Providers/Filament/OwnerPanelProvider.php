@@ -2,6 +2,7 @@
 
 namespace App\Providers\Filament;
 
+use App\Filament\Owner\Pages\Auth\Register;
 use App\Filament\Owner\Widgets\PlatformStatsWidget;
 use App\Filament\Owner\Widgets\RecentTenantsWidget;
 use Filament\Http\Middleware\Authenticate;
@@ -28,6 +29,7 @@ class OwnerPanelProvider extends PanelProvider
             ->id('owner')
             ->path('owner')
             ->login()
+            ->registration(Register::class)
             ->colors([
                 'primary' => Color::Violet,
             ])
