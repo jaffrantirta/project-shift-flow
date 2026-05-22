@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\ScopedToAuthCompany;
 use App\Filament\Resources\ShiftResource\Pages;
 use App\Models\Shift;
 use Filament\Forms;
@@ -20,6 +21,9 @@ use Filament\Schemas\Components as SchemaComponents;
 
 class ShiftResource extends Resource
 {
+    use ScopedToAuthCompany;
+
+    const COMPANY_SCOPE = 'via_location';
     protected static ?string $model = Shift::class;
     protected static string|\UnitEnum|null $navigationGroup = 'Scheduling';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clock';

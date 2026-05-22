@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\ScopedToAuthCompany;
 use App\Filament\Resources\TimesheetResource\Pages;
 use App\Models\Timesheet;
 use Filament\Forms;
@@ -26,6 +27,9 @@ use Filament\Schemas\Components as SchemaComponents;
 
 class TimesheetResource extends Resource
 {
+    use ScopedToAuthCompany;
+
+    const COMPANY_SCOPE = 'via_user';
     protected static ?string $model = Timesheet::class;
     protected static string|\UnitEnum|null $navigationGroup = 'Time & Attendance';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-document-check';

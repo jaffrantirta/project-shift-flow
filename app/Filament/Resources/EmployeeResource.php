@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\ScopedToAuthCompany;
 use App\Filament\Resources\EmployeeResource\Pages;
 use App\Models\User;
 use Filament\Forms;
@@ -25,6 +26,8 @@ use Filament\Schemas\Components as SchemaComponents;
 
 class EmployeeResource extends Resource
 {
+    use ScopedToAuthCompany;
+
     protected static ?string $model = User::class;
     protected static string|\UnitEnum|null $navigationGroup = 'Organization';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-users';
@@ -32,6 +35,12 @@ class EmployeeResource extends Resource
     protected static ?string $modelLabel = 'Employee';
     protected static ?string $pluralModelLabel = 'Employees';
     protected static ?int $navigationSort = 1;
+
+    public static function getEloquentQuery(): \Illuminate\Database\Eloquent\Builder
+    {
+        return static::applyCompanyScope(parent::getEloquentQuery())
+            ->whereIn('role', ['admin', 'employee']);
+    }
 
     public static function form(Schema $schema): Schema
     {
@@ -65,6 +74,13 @@ class EmployeeResource extends Resource
                 ])->columns(2)->columnSpan(2),
 
                 SchemaComponents\Section::make('Access')->schema([
+                    Forms\Components\Select::make('role')
+                        ->options([
+                            'admin'    => 'Admin',
+                            'employee' => 'Employee',
+                        ])
+                        ->default('employee')
+                        ->required(),
                     Forms\Components\TextInput::make('password')
                         ->password()
                         ->revealable()

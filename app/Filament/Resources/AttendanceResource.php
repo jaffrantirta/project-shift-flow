@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\ScopedToAuthCompany;
 use App\Filament\Resources\AttendanceResource\Pages;
 use App\Models\Attendance;
 use Filament\Forms;
@@ -19,6 +20,9 @@ use Filament\Actions\BulkActionGroup;
 
 class AttendanceResource extends Resource
 {
+    use ScopedToAuthCompany;
+
+    const COMPANY_SCOPE = 'via_user';
     protected static ?string $model = Attendance::class;
     protected static string|\UnitEnum|null $navigationGroup = 'Time & Attendance';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-check';

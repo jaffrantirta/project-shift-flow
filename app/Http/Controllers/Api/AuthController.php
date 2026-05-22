@@ -31,6 +31,10 @@ class AuthController extends Controller
             return response()->json(['message' => 'Your account is not active.'], 403);
         }
 
+        if ($user->role === 'owner') {
+            return response()->json(['message' => 'Owners must log in via the owner portal.'], 403);
+        }
+
         $token = $user->createToken($request->device_name ?? 'employee-portal')->plainTextToken;
 
         return response()->json([

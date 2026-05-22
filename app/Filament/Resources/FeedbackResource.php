@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\ScopedToAuthCompany;
 use App\Filament\Resources\FeedbackResource\Pages;
 use App\Models\Feedback;
 use Filament\Forms;
@@ -12,6 +13,8 @@ use Filament\Schemas\Components\Section as SchemaSection;
 
 class FeedbackResource extends Resource
 {
+    use ScopedToAuthCompany;
+
     protected static ?string $model = Feedback::class;
     protected static string|\UnitEnum|null $navigationGroup = 'Communication';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-chat-bubble-left-right';

@@ -16,7 +16,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
-#[Fillable(['company_id', 'name', 'email', 'password', 'phone', 'avatar', 'pin', 'status', 'is_owner'])]
+#[Fillable(['company_id', 'name', 'email', 'password', 'phone', 'avatar', 'pin', 'status', 'is_owner', 'role'])]
 #[Hidden(['password', 'remember_token', 'pin'])]
 class User extends Authenticatable implements FilamentUser
 {
@@ -25,19 +25,19 @@ class User extends Authenticatable implements FilamentUser
 
     public function canAccessPanel(Panel $panel): bool
     {
-        if ($panel->getId() === 'owner') {
-            return $this->is_owner === true;
-        }
-
-        return $this->status === 'active';
+        return match ($panel->getId()) {
+            'owner' => $this->role === 'owner',
+            'admin' => $this->role === 'admin' && $this->status === 'active',
+            default => false,
+        };
     }
 
     protected function casts(): array
     {
         return [
             'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-            'is_owner' => 'boolean',
+            'password'          => 'hashed',
+            'is_owner'          => 'boolean',
         ];
     }
 

@@ -64,6 +64,7 @@ class DatabaseSeeder extends Seeder
             'password'   => Hash::make('password'),
             'phone'      => '+62 812 0000 0001',
             'status'     => 'active',
+            'role'       => 'admin',
         ]);
         EmployeeProfile::create([
             'user_id'          => $admin->id,

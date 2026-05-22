@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\ScopedToAuthCompany;
 use App\Filament\Resources\LeaveRequestResource\Pages;
 use App\Models\LeaveRequest;
 use Filament\Forms;
@@ -24,6 +25,9 @@ use Filament\Schemas\Components as SchemaComponents;
 
 class LeaveRequestResource extends Resource
 {
+    use ScopedToAuthCompany;
+
+    const COMPANY_SCOPE = 'via_user';
     protected static ?string $model = LeaveRequest::class;
     protected static string|\UnitEnum|null $navigationGroup = 'Leave Management';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-no-symbol';

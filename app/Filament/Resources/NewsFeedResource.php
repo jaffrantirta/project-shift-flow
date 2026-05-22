@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\ScopedToAuthCompany;
 use App\Filament\Resources\NewsFeedResource\Pages;
 use App\Models\NewsFeed;
 use Filament\Forms;
@@ -23,6 +24,8 @@ use Filament\Schemas\Components as SchemaComponents;
 
 class NewsFeedResource extends Resource
 {
+    use ScopedToAuthCompany;
+
     protected static ?string $model = NewsFeed::class;
     protected static string|\UnitEnum|null $navigationGroup = 'Communication';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-newspaper';

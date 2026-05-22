@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\ScopedToAuthCompany;
 use App\Filament\Resources\TaskResource\Pages;
 use App\Models\Task;
 use Filament\Forms;
@@ -25,6 +26,8 @@ use Filament\Schemas\Components as SchemaComponents;
 
 class TaskResource extends Resource
 {
+    use ScopedToAuthCompany;
+
     protected static ?string $model = Task::class;
     protected static string|\UnitEnum|null $navigationGroup = 'Task Management';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-clipboard-document-list';

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\ScopedToAuthCompany;
 use App\Filament\Resources\CompanyResource\Pages;
 use App\Models\Company;
 use Filament\Forms;
@@ -15,6 +16,8 @@ use Filament\Schemas\Components as SchemaComponents;
 
 class CompanyResource extends Resource
 {
+    use ScopedToAuthCompany;
+
     protected static ?string $model = Company::class;
     protected static string|\UnitEnum|null $navigationGroup = 'System';
     protected static string|\BackedEnum|null $navigationIcon = 'heroicon-o-building-office-2';
