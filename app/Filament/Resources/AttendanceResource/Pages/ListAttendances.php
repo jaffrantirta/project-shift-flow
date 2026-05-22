@@ -23,12 +23,12 @@ class ListAttendances extends ListRecords
     {
         return [
             'today' => Tab::make('Today')
-                ->modifyQueryUsing(fn(Builder $q) => $q->whereDate('date', today()))
+                ->modifyQueryUsing(fn(Builder $query) => $query->whereDate('date', today()))
                 ->badge(fn() => \App\Models\Attendance::whereDate('date', today())->count()),
             'this_week' => Tab::make('This Week')
-                ->modifyQueryUsing(fn(Builder $q) => $q->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])),
+                ->modifyQueryUsing(fn(Builder $query) => $query->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])),
             'issues' => Tab::make('Issues')
-                ->modifyQueryUsing(fn(Builder $q) => $q->whereIn('status', ['absent', 'no_show', 'late', 'early_out']))
+                ->modifyQueryUsing(fn(Builder $query) => $query->whereIn('status', ['absent', 'no_show', 'late', 'early_out']))
                 ->badge(fn() => \App\Models\Attendance::whereIn('status', ['absent', 'no_show'])->whereDate('date', today())->count()),
             'all' => Tab::make('All'),
         ];

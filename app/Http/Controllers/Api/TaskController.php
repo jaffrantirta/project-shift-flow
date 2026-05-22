@@ -54,11 +54,16 @@ class TaskController extends Controller
             'completed_at' => $request->status === 'completed' ? now() : null,
         ]);
 
+        $location = $request->user()->locations()->wherePivot('is_primary', true)->first()
+                 ?? $request->user()->locations()->first();
+        $tz = $location?->timezone ?? 'UTC';
+
         return response()->json([
             'task_id'      => $taskId,
             'status'       => $assignment->status,
-            'completed_at' => $assignment->completed_at?->toISOString(),
+            'completed_at' => $assignment->completed_at?->setTimezone($tz)->toISOString(),
             'notes'        => $assignment->notes,
+            'timezone'     => $tz,
         ]);
     }
 }

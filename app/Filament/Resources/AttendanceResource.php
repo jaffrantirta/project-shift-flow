@@ -119,12 +119,14 @@ class AttendanceResource extends Resource
                     ->color('indigo'),
                 Tables\Columns\TextColumn::make('clock_in_at')
                     ->label('Clock In')
-                    ->time('H:i')
-                    ->placeholder('—'),
+                    ->formatStateUsing(fn($state, $record) =>
+                        $state ? $state->copy()->setTimezone($record->location?->timezone ?? 'UTC')->format('H:i') : '—'
+                    ),
                 Tables\Columns\TextColumn::make('clock_out_at')
                     ->label('Clock Out')
-                    ->time('H:i')
-                    ->placeholder('—'),
+                    ->formatStateUsing(fn($state, $record) =>
+                        $state ? $state->copy()->setTimezone($record->location?->timezone ?? 'UTC')->format('H:i') : '—'
+                    ),
                 Tables\Columns\TextColumn::make('break_minutes')
                     ->label('Break')
                     ->suffix(' min')
@@ -214,12 +216,14 @@ class AttendanceResource extends Resource
             SchemaComponents\Section::make('Clock Times')->schema([
                 Infolists\Components\TextEntry::make('clock_in_at')
                     ->label('Clock In')
-                    ->dateTime('H:i')
-                    ->placeholder('Not recorded'),
+                    ->formatStateUsing(fn($state, $record) =>
+                        $state ? $state->copy()->setTimezone($record->location?->timezone ?? 'UTC')->format('H:i') : 'Not recorded'
+                    ),
                 Infolists\Components\TextEntry::make('clock_out_at')
                     ->label('Clock Out')
-                    ->dateTime('H:i')
-                    ->placeholder('Not recorded'),
+                    ->formatStateUsing(fn($state, $record) =>
+                        $state ? $state->copy()->setTimezone($record->location?->timezone ?? 'UTC')->format('H:i') : 'Not recorded'
+                    ),
                 Infolists\Components\TextEntry::make('break_minutes')
                     ->label('Break')
                     ->suffix(' min'),
