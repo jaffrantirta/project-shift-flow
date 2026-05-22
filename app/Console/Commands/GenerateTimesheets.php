@@ -57,7 +57,8 @@ class GenerateTimesheets extends Command
                     'location_id'  => $locationId,
                     'period_start' => $periodStart->toDateString(),
                     'period_end'   => $periodEnd->toDateString(),
-                    'status'       => 'draft',
+                    'status'       => 'submitted',
+                    'submitted_at' => now(),
                 ]);
                 $created++;
             }

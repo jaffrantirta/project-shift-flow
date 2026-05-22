@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\TaskResource;
+use App\Models\Location;
 use App\Models\TaskAssignment;
 use Illuminate\Http\Request;
 
@@ -54,14 +55,16 @@ class TaskController extends Controller
             'completed_at' => $request->status === 'completed' ? now() : null,
         ]);
 
-        $location = $request->user()->locations()->wherePivot('is_primary', true)->first()
-                 ?? $request->user()->locations()->first();
+        $user     = $request->user();
+        $location = $user->locations()->wherePivot('is_primary', true)->first()
+            ?? $user->locations()->first()
+            ?? Location::where('company_id', $user->company_id)->first();
         $tz = $location?->timezone ?? 'UTC';
 
         return response()->json([
             'task_id'      => $taskId,
             'status'       => $assignment->status,
-            'completed_at' => $assignment->completed_at?->setTimezone($tz)->toISOString(),
+            'completed_at' => $assignment->completed_at?->setTimezone($tz)->toIso8601String(),
             'notes'        => $assignment->notes,
             'timezone'     => $tz,
         ]);

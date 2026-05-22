@@ -33,12 +33,16 @@ class LaborCostReport extends Page implements HasTable
 
     public function table(Table $table): Table
     {
+        $companyId = auth()->user()?->company_id;
+
         return $table
             ->query(
                 Timesheet::query()
+                    ->whereHas('user', fn($q) => $q->where('company_id', $companyId))
                     ->with(['user.employeeProfile', 'location'])
                     ->withSum('entries', 'total_hours')
                     ->withSum('entries', 'overtime_hours')
+                    ->withCount('entries')
                     ->where('status', 'approved')
             )
             ->columns([
@@ -91,13 +95,18 @@ class LaborCostReport extends Page implements HasTable
                 Tables\Columns\TextColumn::make('estimated_cost')
                     ->label('Estimated Cost')
                     ->state(function ($record): string {
-                        $hours    = (float) ($record->entries_sum_total_hours ?? 0);
-                        $rate     = (float) ($record->user?->employeeProfile?->pay_rate ?? 0);
-                        $payType  = $record->user?->employeeProfile?->pay_type;
+                        $hours   = (float) ($record->entries_sum_total_hours ?? 0);
+                        $days    = (int) ($record->entries_count ?? 0);
+                        $rate    = (float) ($record->user?->employeeProfile?->pay_rate ?? 0);
+                        $payType = $record->user?->employeeProfile?->pay_type;
 
                         if ($rate === 0.0) return '—';
 
-                        $cost = $payType === 'hourly' ? $hours * $rate : $rate;
+                        $cost = match ($payType) {
+                            'hourly' => $hours * $rate,
+                            'daily'  => $days * $rate,
+                            default  => $rate,
+                        };
                         return 'Rp ' . number_format($cost, 0, ',', '.');
                     })
                     ->alignEnd()
@@ -107,7 +116,7 @@ class LaborCostReport extends Page implements HasTable
             ->filters([
                 Tables\Filters\SelectFilter::make('location_id')
                     ->label('Location')
-                    ->options(Location::pluck('name', 'id')),
+                    ->options(Location::where('company_id', auth()->user()?->company_id)->pluck('name', 'id')),
                 Tables\Filters\Filter::make('period')
                     ->schema([
                         \Filament\Forms\Components\DatePicker::make('period_from')->label('From')->native(false),
@@ -147,8 +156,12 @@ class LaborCostReport extends Page implements HasTable
 
     protected function getCsvRecords(): Collection
     {
-        return Timesheet::with(['user.employeeProfile', 'location'])
+        $companyId = auth()->user()?->company_id;
+
+        return Timesheet::whereHas('user', fn($q) => $q->where('company_id', $companyId))
+            ->with(['user.employeeProfile', 'location'])
             ->withSum('entries', 'total_hours')
+            ->withCount('entries')
             ->where('status', 'approved')
             ->get();
     }
@@ -156,9 +169,14 @@ class LaborCostReport extends Page implements HasTable
     protected function getCsvRow(mixed $r): array
     {
         $hours   = (float) ($r->entries_sum_total_hours ?? 0);
+        $days    = (int) ($r->entries_count ?? 0);
         $rate    = (float) ($r->user?->employeeProfile?->pay_rate ?? 0);
         $payType = $r->user?->employeeProfile?->pay_type;
-        $cost    = ($payType === 'hourly' && $rate > 0) ? $hours * $rate : ($rate > 0 ? $rate : 0);
+        $cost    = $rate > 0 ? match ($payType) {
+            'hourly' => $hours * $rate,
+            'daily'  => $days * $rate,
+            default  => $rate,
+        } : 0;
 
         return [
             $r->user?->name,
@@ -185,9 +203,14 @@ class LaborCostReport extends Page implements HasTable
 
         $totalCost = $records->sum(function ($r) {
             $hours   = (float) ($r->entries_sum_total_hours ?? 0);
+            $days    = (int) ($r->entries_count ?? 0);
             $rate    = (float) ($r->user?->employeeProfile?->pay_rate ?? 0);
             $payType = $r->user?->employeeProfile?->pay_type;
-            return ($payType === 'hourly' && $rate > 0) ? $hours * $rate : ($rate > 0 ? $rate : 0);
+            return $rate > 0 ? match ($payType) {
+                'hourly' => $hours * $rate,
+                'daily'  => $days * $rate,
+                default  => $rate,
+            } : 0;
         });
 
         return [

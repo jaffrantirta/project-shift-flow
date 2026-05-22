@@ -32,12 +32,8 @@ class LocationResource extends Resource
     {
         return $schema->schema([
             SchemaComponents\Section::make('Location Details')->schema([
-                Forms\Components\Select::make('company_id')
-                    ->label('Company')
-                    ->relationship('company', 'name')
-                    ->searchable()
-                    ->preload()
-                    ->required(),
+                Forms\Components\Hidden::make('company_id')
+                    ->default(fn() => auth()->user()?->company_id),
                 Forms\Components\TextInput::make('name')
                     ->required()
                     ->maxLength(255),
@@ -75,10 +71,7 @@ class LocationResource extends Resource
                 Tables\Columns\TextColumn::make('name')
                     ->searchable()
                     ->weight('semibold'),
-                Tables\Columns\TextColumn::make('company.name')
-                    ->label('Company')
-                    ->badge()
-                    ->color('indigo'),
+
                 Tables\Columns\TextColumn::make('address')
                     ->limit(40)
                     ->placeholder('—'),
@@ -90,10 +83,7 @@ class LocationResource extends Resource
                     ->label('Departments')
                     ->alignCenter(),
             ])
-            ->filters([
-                Tables\Filters\SelectFilter::make('company')
-                    ->relationship('company', 'name'),
-            ])
+            ->filters([])
             ->actions([
                 EditAction::make(),
                 DeleteAction::make(),

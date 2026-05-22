@@ -28,7 +28,7 @@ class ShiftSwapResource extends JsonResource
                 'id'   => $this->target->id,
                 'name' => $this->target->name,
             ]),
-            'created_at' => $this->created_at->setTimezone($tz)->toISOString(),
+            'created_at' => $this->created_at->setTimezone($tz)->toIso8601String(),
             'timezone'   => $tz,
         ];
     }

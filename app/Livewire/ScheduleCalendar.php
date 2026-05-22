@@ -56,15 +56,19 @@ class ScheduleCalendar extends Component
 
     public function moveShift(int $shiftId, int $userId, string $date): void
     {
-        $shift = Shift::find($shiftId);
+        $companyId = auth()->user()?->company_id;
+        $shift = Shift::whereHas('location', fn($q) => $q->where('company_id', $companyId))->find($shiftId);
         if (! $shift) {
             return;
         }
 
+        $tz = $shift->location?->timezone ?? 'UTC';
         $duration = $shift->start_datetime->diffInMinutes($shift->end_datetime);
-        $newStart = Carbon::parse($date)
-            ->setHour($shift->start_datetime->hour)
-            ->setMinute($shift->start_datetime->minute);
+        $localStart = $shift->start_datetime->setTimezone($tz);
+        $newStart = Carbon::parse($date, $tz)
+            ->setHour($localStart->hour)
+            ->setMinute($localStart->minute)
+            ->setTimezone('UTC');
 
         $shift->update([
             'user_id' => $userId,
@@ -108,10 +112,14 @@ class ScheduleCalendar extends Component
     #[Computed]
     public function employees(): Collection
     {
+        $companyId = auth()->user()?->company_id;
+
         return User::query()
+            ->where('company_id', $companyId)
+            ->where('status', 'active')
+            ->whereIn('role', ['admin', 'employee'])
             ->when($this->locationId, fn($q) => $q->whereHas('locations', fn($q) => $q->where('location_id', $this->locationId)))
             ->with('employeeProfile')
-            ->where('status', 'active')
             ->orderBy('name')
             ->get();
     }
@@ -119,11 +127,13 @@ class ScheduleCalendar extends Component
     #[Computed]
     public function shifts(): Collection
     {
-        $start = $this->weekStartCarbon;
-        $end = $start->copy()->endOfWeek();
+        $companyId = auth()->user()?->company_id;
+        $start     = $this->weekStartCarbon;
+        $end       = $start->copy()->endOfWeek();
 
         return Shift::query()
             ->whereBetween('start_datetime', [$start, $end])
+            ->whereHas('location', fn($q) => $q->where('company_id', $companyId))
             ->when($this->locationId, fn($q) => $q->where('location_id', $this->locationId))
             ->with(['user', 'department', 'location'])
             ->get()
@@ -133,7 +143,9 @@ class ScheduleCalendar extends Component
     #[Computed]
     public function locations(): Collection
     {
-        return Location::orderBy('name')->get();
+        $companyId = auth()->user()?->company_id;
+
+        return Location::where('company_id', $companyId)->orderBy('name')->get();
     }
 
     public function render(): \Illuminate\View\View

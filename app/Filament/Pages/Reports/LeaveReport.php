@@ -33,8 +33,12 @@ class LeaveReport extends Page implements HasTable
 
     public function table(Table $table): Table
     {
+        $companyId = auth()->user()?->company_id;
+
         return $table
-            ->query(LeaveRequest::query()->with(['user.employeeProfile', 'leaveType', 'reviewedBy']))
+            ->query(LeaveRequest::query()
+                ->whereHas('user', fn($q) => $q->where('company_id', $companyId))
+                ->with(['user.employeeProfile', 'leaveType', 'reviewedBy']))
             ->columns([
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Employee')->searchable()->sortable()->weight('semibold'),
@@ -94,7 +98,11 @@ class LeaveReport extends Page implements HasTable
 
     protected function getCsvRecords(): Collection
     {
-        return LeaveRequest::with(['user.employeeProfile', 'leaveType', 'reviewedBy'])->get();
+        $companyId = auth()->user()?->company_id;
+
+        return LeaveRequest::whereHas('user', fn($q) => $q->where('company_id', $companyId))
+            ->with(['user.employeeProfile', 'leaveType', 'reviewedBy'])
+            ->get();
     }
 
     protected function getCsvRow(mixed $r): array

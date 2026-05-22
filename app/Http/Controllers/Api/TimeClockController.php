@@ -12,10 +12,16 @@ class TimeClockController extends Controller
 {
     public function status(Request $request)
     {
-        $user     = $request->user();
-        $location = $user->locations()->wherePivot('is_primary', true)->first()
-                 ?? $user->locations()->first();
-        $tz       = $location?->timezone ?? 'UTC';
+        $user = $request->user();
+
+        // Prefer assigned locations, fall back to all company locations
+        $locations = $user->locations()->orderByPivot('is_primary', 'desc')->get();
+        if ($locations->isEmpty()) {
+            $locations = Location::where('company_id', $user->company_id)->orderBy('name')->get();
+        }
+
+        $primaryLocation = $locations->first();
+        $tz = $primaryLocation?->timezone ?? 'UTC';
         $localToday = now()->setTimezone($tz)->toDateString();
 
         $last = TimeClock::where('user_id', $user->id)
@@ -26,11 +32,21 @@ class TimeClockController extends Controller
         $isClockedIn = $last && in_array($last->type, ['clock_in', 'break_end']);
 
         return response()->json([
-            'is_clocked_in' => $isClockedIn,
-            'timezone'      => $tz,
-            'last_event'    => $last ? [
+            'is_clocked_in'    => $isClockedIn,
+            'timezone'         => $tz,
+            'default_location' => $primaryLocation ? [
+                'id'       => $primaryLocation->id,
+                'name'     => $primaryLocation->name,
+                'timezone' => $primaryLocation->timezone,
+            ] : null,
+            'locations'        => $locations->map(fn($l) => [
+                'id'       => $l->id,
+                'name'     => $l->name,
+                'timezone' => $l->timezone,
+            ]),
+            'last_event' => $last ? [
                 'type'       => $last->type,
-                'clocked_at' => $last->clocked_at->setTimezone($tz)->toISOString(),
+                'clocked_at' => $last->clocked_at->setTimezone($tz)->toIso8601String(),
             ] : null,
         ]);
     }
@@ -47,11 +63,20 @@ class TimeClockController extends Controller
             'device_type'      => 'nullable|in:mobile,kiosk,web',
         ]);
 
-        $user     = $request->user();
-        $type     = $request->type;
-        $nowTs    = now(); // stored as UTC
-        $location = Location::find($request->location_id);
-        $tz       = $location?->timezone ?? 'UTC';
+        $user = $request->user();
+        $type = $request->type;
+        $nowTs = now(); // stored as UTC
+
+        // Ensure the location belongs to the employee's company
+        $location = Location::where('id', $request->location_id)
+            ->where('company_id', $user->company_id)
+            ->first();
+
+        if (! $location) {
+            return response()->json(['message' => 'Location not found or does not belong to your company.'], 422);
+        }
+
+        $tz = $location->timezone ?? 'UTC';
         $localNow = $nowTs->copy()->setTimezone($tz);
         $localDate = $localNow->toDateString(); // today in location's timezone
 
@@ -125,7 +150,7 @@ class TimeClockController extends Controller
         return response()->json([
             'id'         => $event->id,
             'type'       => $event->type,
-            'clocked_at' => $event->clocked_at->setTimezone($tz)->toISOString(),
+            'clocked_at' => $event->clocked_at->setTimezone($tz)->toIso8601String(),
             'timezone'   => $tz,
         ], 201);
     }
@@ -134,8 +159,9 @@ class TimeClockController extends Controller
     {
         $user     = $request->user();
         $location = $user->locations()->wherePivot('is_primary', true)->first()
-                 ?? $user->locations()->first();
-        $tz       = $location?->timezone ?? 'UTC';
+            ?? $user->locations()->first()
+            ?? Location::where('company_id', $user->company_id)->first();
+        $tz = $location?->timezone ?? 'UTC';
 
         $events = TimeClock::where('user_id', $user->id)
             ->with('location')
@@ -147,7 +173,7 @@ class TimeClockController extends Controller
             return [
                 'id'         => $event->id,
                 'type'       => $event->type,
-                'clocked_at' => $event->clocked_at->setTimezone($eventTz)->toISOString(),
+                'clocked_at' => $event->clocked_at->setTimezone($eventTz)->toIso8601String(),
                 'timezone'   => $eventTz,
                 'location'   => $event->location?->name,
             ];

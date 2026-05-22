@@ -34,15 +34,18 @@ class ShiftSummaryReport extends Page implements HasTable
 
     public function table(Table $table): Table
     {
+        $companyId = auth()->user()?->company_id;
+
         return $table
             ->query(
                 Shift::query()
+                    ->whereHas('location', fn($q) => $q->where('company_id', $companyId))
                     ->with(['user.employeeProfile', 'location', 'department', 'schedule'])
             )
             ->columns([
                 Tables\Columns\TextColumn::make('start_datetime')
                     ->label('Date')
-                    ->date('D, M j, Y')
+                    ->formatStateUsing(fn($record) => $record->start_datetime->setTimezone($record->location?->timezone ?? 'UTC')->format('D, M j, Y'))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Employee')
@@ -65,11 +68,11 @@ class ShiftSummaryReport extends Page implements HasTable
                     ->searchable(),
                 Tables\Columns\TextColumn::make('start_datetime')
                     ->label('Start')
-                    ->time('H:i')
+                    ->formatStateUsing(fn($record) => $record->start_datetime->setTimezone($record->location?->timezone ?? 'UTC')->format('H:i'))
                     ->sortable(),
                 Tables\Columns\TextColumn::make('end_datetime')
                     ->label('End')
-                    ->time('H:i'),
+                    ->formatStateUsing(fn($record) => $record->end_datetime->setTimezone($record->location?->timezone ?? 'UTC')->format('H:i')),
                 Tables\Columns\TextColumn::make('duration')
                     ->label('Duration')
                     ->state(function ($record): string {
@@ -103,10 +106,10 @@ class ShiftSummaryReport extends Page implements HasTable
                     ]),
                 Tables\Filters\SelectFilter::make('location_id')
                     ->label('Location')
-                    ->options(Location::pluck('name', 'id')),
+                    ->options(Location::where('company_id', auth()->user()?->company_id)->pluck('name', 'id')),
                 Tables\Filters\SelectFilter::make('department_id')
                     ->label('Department')
-                    ->options(Department::pluck('name', 'id')),
+                    ->options(Department::whereHas('location', fn($q) => $q->where('company_id', auth()->user()?->company_id))->pluck('name', 'id')),
                 Tables\Filters\Filter::make('date_range')
                     ->label('Date Range')
                     ->schema([
@@ -135,22 +138,27 @@ class ShiftSummaryReport extends Page implements HasTable
 
     protected function getCsvRecords(): Collection
     {
-        return Shift::with(['user.employeeProfile', 'location', 'department'])->get();
+        $companyId = auth()->user()?->company_id;
+
+        return Shift::whereHas('location', fn($q) => $q->where('company_id', $companyId))
+            ->with(['user.employeeProfile', 'location', 'department'])
+            ->get();
     }
 
     protected function getCsvRow(mixed $r): array
     {
+        $tz      = $r->location?->timezone ?? 'UTC';
         $minutes = $r->start_datetime->diffInMinutes($r->end_datetime) - ($r->break_duration_minutes ?? 0);
 
         return [
-            $r->start_datetime->format('Y-m-d'),
+            $r->start_datetime->setTimezone($tz)->format('Y-m-d'),
             $r->user?->name,
             $r->user?->employeeProfile?->job_title,
             $r->location?->name,
             $r->department?->name,
             $r->title,
-            $r->start_datetime->format('H:i'),
-            $r->end_datetime->format('H:i'),
+            $r->start_datetime->setTimezone($tz)->format('H:i'),
+            $r->end_datetime->setTimezone($tz)->format('H:i'),
             $r->break_duration_minutes ?? 0,
             sprintf('%dh %02dm', intdiv($minutes, 60), $minutes % 60),
             $r->status,

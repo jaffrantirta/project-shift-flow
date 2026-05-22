@@ -33,9 +33,12 @@ class StaffHoursReport extends Page implements HasTable
 
     public function table(Table $table): Table
     {
+        $companyId = auth()->user()?->company_id;
+
         return $table
             ->query(
                 Timesheet::query()
+                    ->whereHas('user', fn($q) => $q->where('company_id', $companyId))
                     ->with(['user.employeeProfile', 'location', 'entries'])
                     ->withSum('entries', 'total_hours')
                     ->withSum('entries', 'overtime_hours')
@@ -79,7 +82,7 @@ class StaffHoursReport extends Page implements HasTable
                 Tables\Filters\SelectFilter::make('status')
                     ->options(['draft' => 'Draft', 'submitted' => 'Submitted', 'approved' => 'Approved', 'rejected' => 'Rejected']),
                 Tables\Filters\SelectFilter::make('location_id')
-                    ->label('Location')->options(Location::pluck('name', 'id')),
+                    ->label('Location')->options(Location::where('company_id', auth()->user()?->company_id)->pluck('name', 'id')),
                 Tables\Filters\Filter::make('period')
                     ->schema([
                         \Filament\Forms\Components\DatePicker::make('period_from')->label('From')->native(false),
@@ -104,7 +107,10 @@ class StaffHoursReport extends Page implements HasTable
 
     protected function getCsvRecords(): Collection
     {
-        return Timesheet::with(['user.employeeProfile', 'location'])
+        $companyId = auth()->user()?->company_id;
+
+        return Timesheet::whereHas('user', fn($q) => $q->where('company_id', $companyId))
+            ->with(['user.employeeProfile', 'location'])
             ->withSum('entries', 'total_hours')
             ->withSum('entries', 'overtime_hours')
             ->withCount('entries')

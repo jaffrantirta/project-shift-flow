@@ -17,8 +17,8 @@ class ShiftResource extends JsonResource
         return [
             'id'                     => $this->id,
             'title'                  => $this->title,
-            'start_datetime'         => $this->start_datetime?->setTimezone($tz)->toISOString(),
-            'end_datetime'           => $this->end_datetime?->setTimezone($tz)->toISOString(),
+            'start_datetime'         => $this->start_datetime?->setTimezone($tz)->toIso8601String(),
+            'end_datetime'           => $this->end_datetime?->setTimezone($tz)->toIso8601String(),
             'break_duration_minutes' => $this->break_duration_minutes,
             'duration_minutes'       => $this->getDurationMinutes(),
             'status'                 => $this->status,

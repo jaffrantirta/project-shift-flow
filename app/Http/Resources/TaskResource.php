@@ -29,12 +29,12 @@ class TaskResource extends JsonResource
                 $this->assignments->first()
                     ? [
                         'status'       => $this->assignments->first()->status,
-                        'completed_at' => $this->assignments->first()->completed_at?->setTimezone($tz)->toISOString(),
+                        'completed_at' => $this->assignments->first()->completed_at?->setTimezone($tz)->toIso8601String(),
                         'notes'        => $this->assignments->first()->notes,
                     ]
                     : null
             ),
-            'created_at' => $this->created_at->setTimezone($tz)->toISOString(),
+            'created_at' => $this->created_at->setTimezone($tz)->toIso8601String(),
             'timezone'   => $tz,
         ];
     }

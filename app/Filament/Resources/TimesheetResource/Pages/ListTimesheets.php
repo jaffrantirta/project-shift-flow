@@ -55,13 +55,15 @@ class ListTimesheets extends ListRecords
 
     public function getTabs(): array
     {
+        $companyId = auth()->user()?->company_id;
+
         return [
             'draft' => Tab::make('Draft')
                 ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'draft'))
-                ->badge(fn() => \App\Models\Timesheet::where('status', 'draft')->count()),
+                ->badge(function () use ($companyId) { return \App\Models\Timesheet::whereHas('user', fn($q) => $q->where('company_id', $companyId))->where('status', 'draft')->count(); }),
             'pending' => Tab::make('Pending Approval')
                 ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'submitted'))
-                ->badge(fn() => \App\Models\Timesheet::where('status', 'submitted')->count()),
+                ->badge(function () use ($companyId) { return \App\Models\Timesheet::whereHas('user', fn($q) => $q->where('company_id', $companyId))->where('status', 'submitted')->count(); }),
             'approved' => Tab::make('Approved')
                 ->modifyQueryUsing(fn(Builder $query) => $query->where('status', 'approved')),
             'rejected' => Tab::make('Rejected')

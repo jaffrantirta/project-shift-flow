@@ -17,11 +17,13 @@ trait ResolvesTimezone
             return self::$tzCache[$userId];
         }
 
-        $location = $request->user()
-            ?->locations()
-            ->wherePivot('is_primary', true)
-            ->first()
-            ?? $request->user()?->locations()->first();
+        $user = $request->user();
+
+        // Prefer user's assigned primary location, then any assigned location,
+        // then fall back to any location in the user's company
+        $location = $user?->locations()->wherePivot('is_primary', true)->first()
+            ?? $user?->locations()->first()
+            ?? \App\Models\Location::where('company_id', $user?->company_id)->first();
 
         $tz = $location?->timezone ?? 'UTC';
 

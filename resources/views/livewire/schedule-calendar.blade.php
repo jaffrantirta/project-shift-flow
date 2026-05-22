@@ -145,10 +145,15 @@
                                             wire:click.stop="openEditModal({{ $shift->id }})"
                                             class="mb-1 cursor-grab select-none rounded-md px-2 py-1 text-xs text-white shadow-sm hover:brightness-110 active:cursor-grabbing active:opacity-70 transition-all"
                                             style="background-color: {{ $color }}"
-                                            title="{{ $shift->user?->name }}: {{ $shift->start_datetime->format('H:i') }}–{{ $shift->end_datetime->format('H:i') }}"
+                                            @php
+                                                $shiftTz = $shift->location?->timezone ?? 'UTC';
+                                                $shiftStart = $shift->start_datetime->setTimezone($shiftTz)->format('H:i');
+                                                $shiftEnd   = $shift->end_datetime->setTimezone($shiftTz)->format('H:i');
+                                            @endphp
+                                            title="{{ $shift->user?->name }}: {{ $shiftStart }}–{{ $shiftEnd }}"
                                         >
                                             <div class="font-semibold leading-tight">
-                                                {{ $shift->start_datetime->format('H:i') }}–{{ $shift->end_datetime->format('H:i') }}
+                                                {{ $shiftStart }}–{{ $shiftEnd }}
                                             </div>
                                             @if($shift->department)
                                                 <div class="truncate opacity-90">{{ $shift->department->name }}</div>

@@ -20,8 +20,8 @@ class TimesheetResource extends JsonResource
             'period_end'   => $this->period_end->toDateString(),
             'status'       => $this->status,
             'total_hours'  => $this->getTotalHoursAttribute(),
-            'submitted_at' => $this->submitted_at?->setTimezone($tz)->toISOString(),
-            'approved_at'  => $this->approved_at?->setTimezone($tz)->toISOString(),
+            'submitted_at' => $this->submitted_at?->setTimezone($tz)->toIso8601String(),
+            'approved_at'  => $this->approved_at?->setTimezone($tz)->toIso8601String(),
             'timezone'     => $tz,
             'location'     => $this->whenLoaded('location', fn() => [
                 'id'       => $this->location->id,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ShiftResource;
+use App\Models\Location;
 use App\Models\NewsFeed;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -14,8 +15,9 @@ class DashboardController extends Controller
     {
         $user     = $request->user();
         $location = $user->locations()->wherePivot('is_primary', true)->first()
-                 ?? $user->locations()->first();
-        $tz       = $location?->timezone ?? 'UTC';
+            ?? $user->locations()->first()
+            ?? Location::where('company_id', $user->company_id)->first();
+        $tz = $location?->timezone ?? 'UTC';
 
         // Build today's date range in the user's local timezone, converted to UTC for the query
         $localToday    = Carbon::now($tz)->toDateString();
@@ -47,7 +49,7 @@ class DashboardController extends Controller
                 'title'      => $item->title,
                 'body'       => $item->body,
                 'is_pinned'  => $item->is_pinned,
-                'created_at' => $item->created_at->setTimezone($tz)->toISOString(),
+                'created_at' => $item->created_at->setTimezone($tz)->toIso8601String(),
             ]);
 
         $pendingLeave = $user->leaveRequests()

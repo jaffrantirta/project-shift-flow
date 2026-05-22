@@ -26,7 +26,7 @@ class LeaveRequestResource extends JsonResource
             'reason'      => $this->reason,
             'status'      => $this->status,
             'reviewed_by' => $this->whenLoaded('reviewedBy', fn() => $this->reviewedBy?->name),
-            'created_at'  => $this->created_at->setTimezone($tz)->toISOString(),
+            'created_at'  => $this->created_at->setTimezone($tz)->toIso8601String(),
         ];
     }
 }

@@ -110,8 +110,9 @@ class EmployeeResource extends Resource
                         ]),
                     Forms\Components\Select::make('pay_type')
                         ->options([
-                            'hourly' => 'Hourly',
-                            'salary' => 'Salary',
+                            'hourly'  => 'Hourly',
+                            'daily'   => 'Daily',
+                            'salary'  => 'Salary',
                         ]),
                     Forms\Components\TextInput::make('pay_rate')
                         ->numeric()
@@ -184,13 +185,17 @@ class EmployeeResource extends Resource
                     ]),
                 Tables\Filters\SelectFilter::make('employment_type')
                     ->label('Employment Type')
-                    ->relationship('employeeProfile', 'employment_type')
                     ->options([
-                        'full_time' => 'Full Time',
-                        'part_time' => 'Part Time',
-                        'casual' => 'Casual',
+                        'full_time'  => 'Full Time',
+                        'part_time'  => 'Part Time',
+                        'casual'     => 'Casual',
                         'contractor' => 'Contractor',
-                    ]),
+                    ])
+                    ->query(fn(\Illuminate\Database\Eloquent\Builder $query, array $data) =>
+                        filled($data['value'])
+                            ? $query->whereHas('employeeProfile', fn($q) => $q->where('employment_type', $data['value']))
+                            : $query
+                    ),
             ])
             ->actions([
                 ViewAction::make(),

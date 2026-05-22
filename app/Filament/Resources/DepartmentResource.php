@@ -35,7 +35,7 @@ class DepartmentResource extends Resource
             SchemaComponents\Section::make()->schema([
                 Forms\Components\Select::make('location_id')
                     ->label('Location')
-                    ->relationship('location', 'name')
+                    ->relationship('location', 'name', fn($query) => $query->where('company_id', auth()->user()?->company_id))
                     ->searchable()
                     ->preload()
                     ->required(),
@@ -60,16 +60,14 @@ class DepartmentResource extends Resource
                     ->label('Location')
                     ->badge()
                     ->color('indigo'),
-                Tables\Columns\TextColumn::make('location.company.name')
-                    ->label('Company')
-                    ->toggleable(isToggledHiddenByDefault: true),
+
                 Tables\Columns\TextColumn::make('description')
                     ->limit(50)
                     ->placeholder('—'),
             ])
             ->filters([
                 Tables\Filters\SelectFilter::make('location')
-                    ->relationship('location', 'name'),
+                    ->relationship('location', 'name', fn($query) => $query->where('company_id', auth()->user()?->company_id)),
             ])
             ->actions([
                 EditAction::make(),

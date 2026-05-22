@@ -18,6 +18,7 @@ use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\BulkAction;
 use Filament\Schemas\Components as SchemaComponents;
+use Filament\Schemas\Components\Utilities\Get;
 
 class ShiftResource extends Resource
 {
@@ -36,7 +37,7 @@ class ShiftResource extends Resource
             SchemaComponents\Section::make('Shift Assignment')->schema([
                 Forms\Components\Select::make('schedule_id')
                     ->label('Schedule')
-                    ->relationship('schedule', 'week_start_date')
+                    ->relationship('schedule', 'week_start_date', fn($query) => $query->whereHas('location', fn($q) => $q->where('company_id', auth()->user()?->company_id)))
                     ->getOptionLabelFromRecordUsing(fn($record) => 'Week of ' . $record->week_start_date->format('M j, Y') . ' — ' . $record->location->name)
                     ->searchable()
                     ->preload()
@@ -44,20 +45,20 @@ class ShiftResource extends Resource
                     ->columnSpanFull(),
                 Forms\Components\Select::make('user_id')
                     ->label('Employee')
-                    ->relationship('user', 'name')
+                    ->relationship('user', 'name', fn($query) => $query->where('company_id', auth()->user()?->company_id)->whereIn('role', ['admin', 'employee']))
                     ->searchable()
                     ->preload()
                     ->placeholder('Open shift (unassigned)'),
                 Forms\Components\Select::make('location_id')
                     ->label('Location')
-                    ->relationship('location', 'name')
+                    ->relationship('location', 'name', fn($query) => $query->where('company_id', auth()->user()?->company_id))
                     ->searchable()
                     ->preload()
                     ->required()
                     ->live(),
                 Forms\Components\Select::make('department_id')
                     ->label('Department')
-                    ->relationship('department', 'name')
+                    ->relationship('department', 'name', fn($query) => $query->whereHas('location', fn($q) => $q->where('company_id', auth()->user()?->company_id)))
                     ->searchable()
                     ->preload()
                     ->placeholder('No department'),
@@ -71,13 +72,15 @@ class ShiftResource extends Resource
                     ->label('Start')
                     ->required()
                     ->native(false)
-                    ->seconds(false),
+                    ->seconds(false)
+                    ->timezone(fn(Get $get): string => \App\Models\Location::find($get('location_id'))?->timezone ?? 'UTC'),
                 Forms\Components\DateTimePicker::make('end_datetime')
                     ->label('End')
                     ->required()
                     ->native(false)
                     ->seconds(false)
-                    ->after('start_datetime'),
+                    ->after('start_datetime')
+                    ->timezone(fn(Get $get): string => \App\Models\Location::find($get('location_id'))?->timezone ?? 'UTC'),
                 Forms\Components\TextInput::make('break_duration_minutes')
                     ->label('Break (minutes)')
                     ->numeric()
@@ -103,12 +106,16 @@ class ShiftResource extends Resource
             ->columns([
                 Tables\Columns\TextColumn::make('start_datetime')
                     ->label('Date')
-                    ->date('M j, Y')
+                    ->formatStateUsing(fn(Shift $record): string =>
+                        $record->start_datetime->setTimezone($record->location?->timezone ?? 'UTC')->format('M j, Y')
+                    )
                     ->sortable(),
                 Tables\Columns\TextColumn::make('start_datetime')
                     ->label('Time')
                     ->formatStateUsing(fn(Shift $record): string =>
-                        $record->start_datetime->format('H:i') . ' – ' . $record->end_datetime->format('H:i')
+                        $record->start_datetime->setTimezone($record->location?->timezone ?? 'UTC')->format('H:i')
+                        . ' – ' .
+                        $record->end_datetime->setTimezone($record->location?->timezone ?? 'UTC')->format('H:i')
                     ),
                 Tables\Columns\TextColumn::make('user.name')
                     ->label('Employee')
@@ -144,7 +151,7 @@ class ShiftResource extends Resource
                         'cancelled' => 'Cancelled',
                     ]),
                 Tables\Filters\SelectFilter::make('location')
-                    ->relationship('location', 'name'),
+                    ->relationship('location', 'name', fn($query) => $query->where('company_id', auth()->user()?->company_id)),
                 Tables\Filters\Filter::make('today')
                     ->label('Today')
                     ->query(fn($query) => $query->whereDate('start_datetime', today())),
